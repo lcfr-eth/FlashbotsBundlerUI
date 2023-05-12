@@ -5,11 +5,7 @@ import React from "react";
 
 export default function Header() {
   return (
-    <a
-      href="https://github.com/scaffold-eth/scaffold-eth-examples/tree/abi-uploader"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+    <a href="https://github.com/lcfr-eth/FlashbotsBundlerUI" target="_blank" rel="noopener noreferrer">
       <PageHeader
         title="ENSVision Flashbots Bundler"
         subTitle="Bundle TXs"

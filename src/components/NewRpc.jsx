@@ -43,7 +43,7 @@ const AddCustomRPCButton = ({ chainName, rpcUrl }) => {
   };
 
   return (
-    <Button style={{ width: "400px" }} onClick={handleAddCustomRPC}>
+    <Button style={{ width: "500px" }} onClick={handleAddCustomRPC}>
       Click to add your personal Flashbots RPC to MetaMask
     </Button>
   );

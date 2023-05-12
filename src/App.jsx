@@ -8,17 +8,13 @@ import ReactJson from "react-json-view";
 import "antd/dist/antd.css";
 import React, { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Switch, useParams } from "react-router-dom";
-import Web3Modal from "web3modal";
+import Web3Modal, { local } from "web3modal";
 import "./App.css";
 import { Account, Contract, Faucet, GasGauge, Header, Ramp, ThemeSwitch, AddressInput, EtherInput, AddRPC } from "./components";
 import { INFURA_ID, NETWORK, NETWORKS } from "./constants";
 import { Transactor } from "./helpers";
 import { uuid } from "uuidv4";
 import {
-  useBalance,
-  useContractLoader,
-  useContractReader,
-  useGasPrice,
   useOnBlock,
   useUserProviderAndSigner,
   usePoller,
@@ -81,24 +77,39 @@ const ERC721ABI = [{
   "type": "function"
 }]
 
-/*
-    Welcome to 🏗 scaffold-eth !
+const APPROVAL_GASLIMIT = 50000;
 
-    Code:
-    https://github.com/scaffold-eth/scaffold-eth
-
-    Support:
-    https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA
-    or DM @austingriffith on twitter or telegram
-
-    You should get your own Infura.io ID and put it in `constants.js`
-    (this is your connection to the main Ethereum network for ENS etc.)
-
-
-    🌏 EXTERNAL CONTRACTS:
-    You can also bring in contract artifacts in `constants.js`
-    (and then use the `useExternalContractLoader()` hook!)
-*/
+const transferAddress = "0x1eAcA5cEc385A6C876D8A56f6c776Bb5857AcCbc";
+const TRANSFER_ABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "tokens",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "collection",
+				"type": "address"
+			}
+		],
+		"name": "bulkTransfer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
 
 /// 📡 What chain are your contracts deployed to?
 const cachedNetwork = window.localStorage.getItem("network");
@@ -172,7 +183,13 @@ function App(props) {
   const [bundleUuid, setBundleUuid] = useLocalStorage("bundleUuid", "");
   const [totalCost, setTotalCost] = useLocalStorage("totalCost", "");
   const [costEth, setCostEth] = useState();
+  const [txHashes, setTxHashes] = useState([]);
+  const [sentBundle, setSentBundle] = useState();
+  const [sentBlock, setSentBlock] = useState();
 
+
+  // polls the bundle api for the bundle and sets the bundle state
+  // Note: The transaction sent last is the first in the rawTxs array. So we reverse it.
   usePoller(async () => {
     try {
       if (bundleUuid) {
@@ -188,6 +205,39 @@ function App(props) {
       console.log(e);
     }
   }, 3000);
+
+  // poll blocks for txHashes of our bundle
+  usePoller(async () => {
+    try {
+      console.log("sentBundle", sentBundle);
+      console.log("sentBlock", sentBlock);
+      console.log("txHashes", txHashes);
+
+      if (sentBundle && sentBlock && txHashes.length != 0) {
+        console.log("checking if TXs were mined.")
+        const currentBlock = await userSigner.provider.getBlockNumber();
+
+        // use ethers getTransactionReceipt to check if the txHashes are in a block
+        const txReceipt = await localProvider.getTransactionReceipt(txHashes[0]);
+        if (txReceipt && txReceipt.blockNumber) {
+          alert("Bundle mined in block " + txReceipt.blockNumber);
+          setSentBundle();
+          setSentBlock();
+          setTxHashes([]);
+        }
+
+        if (currentBlock > sentBlock + 10) {
+          alert("Bundle not found in the last 10 blocks. resetting poller.");
+          setSentBundle();
+          setSentBlock();
+          setTxHashes([]);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }, 3000);
+
 
   useEffect(() => {
     console.log("new bundle");
@@ -232,90 +282,7 @@ function App(props) {
     console.log(`⛓ A new mainnet block is here: ${mainnetProvider._lastBlockNumber}`);
   });
 
-  let networkDisplay = "";
-  if (NETWORKCHECK && localChainId && selectedChainId && localChainId !== selectedChainId) {
-    const networkSelected = NETWORK(selectedChainId);
-    const networkLocal = NETWORK(localChainId);
-    if (selectedChainId === 1337 && localChainId === 31337) {
-      networkDisplay = (
-        <div style={{ zIndex: 2, position: "absolute", right: 0, top: 60, padding: 16 }}>
-          <Alert
-            message="⚠️ Wrong Network ID"
-            description={
-              <div>
-                You have <b>chain id 1337</b> for localhost and you need to change it to <b>31337</b> to work with
-                HardHat.
-                <div>(MetaMask -&gt; Settings -&gt; Networks -&gt; Chain ID -&gt; 31337)</div>
-              </div>
-            }
-            type="error"
-            closable={false}
-          />
-        </div>
-      );
-    } else {
-      networkDisplay = (
-        <div style={{ zIndex: 2, position: "absolute", right: 0, top: 60, padding: 16 }}>
-          <Alert
-            message="⚠️ Wrong Network"
-            description={
-              <div>
-                You have <b>{networkSelected && networkSelected.name}</b> selected and you need to be on{" "}
-                <Button
-                  onClick={async () => {
-                    const ethereum = window.ethereum;
-                    const data = [
-                      {
-                        chainId: "0x" + targetNetwork.chainId.toString(16),
-                        chainName: targetNetwork.name,
-                        nativeCurrency: targetNetwork.nativeCurrency,
-                        rpcUrls: [targetNetwork.rpcUrl],
-                        blockExplorerUrls: [targetNetwork.blockExplorer],
-                      },
-                    ];
-                    console.log("data", data);
 
-                    let switchTx;
-                    // https://docs.metamask.io/guide/rpc-api.html#other-rpc-methods
-                    try {
-                      switchTx = await ethereum.request({
-                        method: "wallet_switchEthereumChain",
-                        params: [{ chainId: data[0].chainId }],
-                      });
-                    } catch (switchError) {
-                      // not checking specific error code, because maybe we're not using MetaMask
-                      try {
-                        switchTx = await ethereum.request({
-                          method: "wallet_addEthereumChain",
-                          params: data,
-                        });
-                      } catch (addError) {
-                        // handle "add" error
-                      }
-                    }
-
-                    if (switchTx) {
-                      console.log(switchTx);
-                    }
-                  }}
-                >
-                  <b>{networkLocal && networkLocal.name}</b>
-                </Button>
-              </div>
-            }
-            type="error"
-            closable={false}
-          />
-        </div>
-      );
-    }
-  } else {
-    networkDisplay = (
-      <div style={{ zIndex: -1, position: "absolute", right: 154, top: 28, padding: 16, color: targetNetwork.color }}>
-        {targetNetwork.name}
-      </div>
-    );
-  }
 
   const loadWeb3Modal = useCallback(async () => {
     const provider = await web3Modal.connect();
@@ -330,31 +297,34 @@ function App(props) {
 
   const [contractAddress, setContractAddress] = useLocalStorage("contractAddress", "");
   const [contractABI, setContractABI] = useState("");
+  const [tokenIds, setTokenIds] = useState("");
   const { TextArea } = Input;
   console.log("==-- contractAddress: ", contractAddress);
+  console.log("==-- transferAddress: ", transferAddress);
+  let transferContract = useExternalContractLoader(injectedProvider, transferAddress, TRANSFER_ABI);
+  console.log("==-- transferContract: ", transferContract);
   let theExternalContract = useExternalContractLoader(injectedProvider, contractAddress, ERC721ABI);
   console.log("==-- theExternalContract: ", theExternalContract);
   //console.log(theExternalContract);
 
-  const getGasEstimate = async () => {
+  const estimateApprovalCost = async () => { // getGasEstimate
     if (theExternalContract) {
-      let gasLimit = await theExternalContract.estimateGas.setApprovalForAll(toAddress, true);
+      let gasLimit = BigNumber.from(APPROVAL_GASLIMIT); // await theExternalContract.estimateGas.setApprovalForAll(toAddress, true);
       console.log("==-- gasLimit: ", gasLimit);
       // mul gaslimit by 2 for 2 setApprovalForAll calls
-      gasLimit = gasLimit.mul(2);
-      console.log("==-- gasLimit2: ", gasLimit);
+      //gasLimit = gasLimit.mul(2);
+      //console.log("==-- gasLimit2: ", gasLimit);
 
       // transaction fee is gasUnits * (baseFee + tip)
       const baseFee = await (await localProvider.getFeeData()).gasPrice;
       console.log("==-- baseFee: ", baseFee);
 
-      // 20 gwei per setApprovalForAll call
-      const totalTip = ethers.utils.parseUnits("40", "gwei");
+      // 10 gwei per setApprovalForAll call
+      const totalTip = ethers.utils.parseUnits("10", "gwei");
 
       const fee = gasLimit.mul(baseFee.add(totalTip));
       console.log("==-- fee: ", fee);
       console.log("==-- fee ETH: ", ethers.utils.formatEther(fee));
-
       return fee;
     }
   };
@@ -390,7 +360,7 @@ function App(props) {
       </div>
     );
   }
-
+/*
   const options = [];
   // Restrict to goerli and mainnet
   options.push(
@@ -422,14 +392,13 @@ function App(props) {
       {options}
     </Select>
   );
-
+*/
   return (
     <div className="App">
       {/* ✏️ Edit the header and change the title to your project name */}
       <Header />
-      {networkDisplay}
       <span style={{ verticalAlign: "middle" }}>
-        {networkSelect}
+        {/*networkSelect*/}
         {/*faucetHint*/}
       </span>
       <BrowserRouter>
@@ -453,7 +422,7 @@ function App(props) {
               }}
               to="/"
             >
-              Add Flashbots RPC
+              New Bundle
             </Link>
           </Menu.Item>
 
@@ -464,7 +433,18 @@ function App(props) {
               }}
               to="/sendeth"
             >
-              Build Bundle
+              Send ETH
+            </Link>
+          </Menu.Item>
+
+          <Menu.Item key="/approval">
+            <Link
+              onClick={() => {
+                setRoute("/approval");
+              }}
+              to="/approval"
+            >
+              Set Approvals
             </Link>
           </Menu.Item>
 
@@ -475,9 +455,21 @@ function App(props) {
               }}
               to="/transfer"
             >
-              Transfer Tokens
+              Transfer NFTs
             </Link>
           </Menu.Item>
+
+          <Menu.Item key="/submit">
+            <Link
+              onClick={() => {
+                setRoute("/submit");
+              }}
+              to="/submit"
+            >
+              Submit Bundle
+            </Link>
+          </Menu.Item>
+
         </Menu>
 
         <Switch>
@@ -510,95 +502,83 @@ function App(props) {
             <div>{externalContractDisplay}</div>
           </Route>
           */}
-          <Route exact path="/sendeth">
-            <div class="center" style={{ width: "50%" }}>
-              ERC721 Contract address
-              <div style={{ padding: 4 }}>
-                <AddressInput
-                  placeholder="Enter ERC721 Contract Address"
-                  ensProvider={mainnetProvider}
-                  value={contractAddress}
-                  onChange={setContractAddress}
-                />
-                Hacked Address
-                <AddressInput
-                  placeholder="Enter HACKED Address"
-                  ensProvider={mainnetProvider}
-                  value={hackedAddress}
-                  onChange={setHackedAddress}
-                />
-                Clean Address
-                <AddressInput
-                  placeholder="Enter Clean UNHACKED Address"
-                  ensProvider={mainnetProvider}
-                  value={toAddress}
-                  onChange={setToAddress}
-                />
-              </div>
-              Estimated Transaction Cost: { totalCost ? ethers.utils.formatEther(totalCost) : 0 } ETHH            
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-              <Button
-                style={{ width: '700px' }}
-                onClick={async () => {
-                  try {
-                    const gasLimit = await getGasEstimate();
-                    setTotalCost(gasLimit.toString());
-                    const costEth = ethers.utils.formatEther(gasLimit);
-                    console.log("==-- cost ETH: ", costEth);
-                    setCostEth(costEth);
-                  } catch (e) {
-                    console.log({ e });
-                  }
-                }}
-              >
-                Step 0: Change to the HACKED address in MetaMask then click to Estimate/Set cost for tx's
-              </Button>
-              <Button
-                style={{ width: '700px' }}
-                onClick={async () => {
-                  try {
-                    //if (await userSigner.getAddress() == hackedAddress) {
-                    //  alert("You are the hacked address, please change to clean address to fund.");
-                    //  return;
-                  // }
-                    console.log("==-- totalCost: ", totalCost);
-                    await userSigner.sendTransaction({
-                      to: hackedAddress,
-                      value: BigNumber.from(totalCost),
-                    });
-                  } catch (e) {
-                    console.log({ e });
-                  }
-                }}
-              >
-                Step 1: Change to CLEAN address in MetaMask then click to send Cost to Hacked Address
-              </Button>
-                <Button
-                  style={{ width: '700px' }}
-                  onClick={async () => {
-                    try {
-                      if (await userSigner.getAddress() != hackedAddress) {
-                        alert("Switch to the Hacked Account to approve the clean address.");
-                        return;
-                      }
-                      const tx = await theExternalContract.connect(userSigner).setApprovalForAll(toAddress, true);
-                      console.log("tx: ", tx);
-                    } catch (e) {
-                      console.log({ e });
-                    }
-                  }}
-                >
-                  Step 2: Change to HACKED Address in MetaMask then click to SetApproval for Clean Address
-                </Button>
-            </div>
+          <Route exact path="/">
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ padding: 4, width: '500px', }}>
+          <div>{flashbotsRpc}</div>
+            <Input
+            style={{ width: '500px'}}
+              value={bundleUuid}
+              onChange={e => {
+                setBundleUuid(e.target.value);
+              }}
+            />
+            <div style={{ padding: 4 }}></div>
+            <Button
+            style={{ width: '500px'}}
+              onClick={() => {
+                const newUuid = uuid();
+                setBundleUuid(newUuid);
+              }}
+            >
+              Click to generate new personal RPC URL for new bundles
+            </Button>
+            <div style={{ padding: 4 }}></div>
+            <AddRPC 
+            chainName="Flashbots Protect Personal RPC"
+            rpcUrl={`https://rpc.flashbots.net?bundle=${bundleUuid}`}
+            />
+            <Divider />
 
-          <Divider />
             {bundle && (
               <div class="center" style={{ width: "50%" }}>
+                <ReactJson src={bundle} />
+              </div>
+            )}
+
+            </div>
+            </div>
+            </Route>
+
+
+          <Route exact path="/submit">
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ padding: 4, width: '500px', }}>
+          <div>{flashbotsRpc}</div>
+            <Input
+            style={{ width: '500px'}}
+              value={bundleUuid}
+              onChange={e => {
+                setBundleUuid(e.target.value);
+              }}
+            />
+            <Divider />
+            {bundle && (
+              <div class="center" style={{ width: "50%" }}>
+                ONLY submit bundle when you have submitted all needed transactions!!
                 <ReactJson src={bundle} />
                 <Button
                   onClick={async () => {
                     try {
+                      if (bundle.length == 0) {
+                        console.log("no bundle to send");
+                        alert("no bundle to send");
+                        return;
+                      }
+                      // get the current block number
+                      const blockNumber = await localProvider.getBlockNumber();
+                      console.log("blockNumber: ", blockNumber);
+                      // set SentBlock to current block number
+                      setSentBlock(blockNumber);
+                      // encode each transaction in the bundle with keccak256 to create a new array of encoded transactions
+                      const txHashes = bundle.map((tx) => {
+                        return ethers.utils.keccak256(tx);
+                      });
+                      setTxHashes(txHashes);
+                      console.log("txHashes: ", txHashes);
+                      // set sentBundle to true
+                      setSentBundle(true);
+
                       console.log("submitting bundles");
                       console.log("bundle: ", bundle);
                       const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
@@ -614,6 +594,7 @@ function App(props) {
                       const resJson = await res.json()
                       console.log({resJson})
                       console.log("bundles submitted");
+                      alert("Bundles submitted");
                     } catch (error) {
                       console.log({error})
                     }
@@ -623,54 +604,273 @@ function App(props) {
                 </Button>
               </div>
             )}
-
-            <Divider />
-            </div>
+          </div>
+          </div>
           </Route>
-          <Route exact path="/">
-            <div>{flashbotsRpc}</div>
+
+          <Route exact path="/sendeth">
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ padding: 4, width: '500px', }}>
+          <div>{flashbotsRpc}</div>
             <Input
+            style={{ width: '500px'}}
               value={bundleUuid}
               onChange={e => {
                 setBundleUuid(e.target.value);
               }}
             />
-            <Button
-              onClick={() => {
-                const newUuid = uuid();
-                setBundleUuid(newUuid);
-              }}
-            >
-              Generate new personal RPC URL
-            </Button>
             <Divider />
-            <AddRPC 
-            chainName="Flashbots Protect Personal RPC"
-            rpcUrl={`https://rpc.flashbots.net?bundle=${bundleUuid}`}
+              This step sends ETH to the hacked address to cover the cost of the approval transaction(s). 
+              <br /> 
+              Be sure you are connected from a clean UNHACKED address for this step. 
+            <br /> <br />
+            Estimated Cost Per Approval : { totalCost ? ethers.utils.formatEther(totalCost) : 0 } ETH <br />
+              <Button
+                style={{ width: '500px'}}
+                onClick={async () => {
+                  try {
+                    const gasLimit = await estimateApprovalCost();
+                    setTotalCost(gasLimit.toString());
+                    const costEth = ethers.utils.formatEther(gasLimit);
+                    console.log("==-- cost ETH: ", costEth);
+                    setCostEth(costEth);
+                  } catch (e) {
+                    console.log({ e });
+                  }
+                }}
+              >
+                Click to estimate cost of approval transaction(s)
+              </Button>
+              <div style={{ padding: 4 }}></div>
+              Enter compromised address to send ETH to below:
+                <AddressInput
+                  placeholder="Enter address to send ETH to here"
+                  ensProvider={mainnetProvider}
+                  value={hackedAddress}
+                  onChange={setHackedAddress}
+                />
+                <div style={{ padding: 4 }}></div>
+                <Button
+                style={{ width: '500px' }}
+                onClick={async () => {
+                  try {
+                    const cost = await estimateApprovalCost();
+                    console.log("==-- totalCost: ", cost);
+                    await userSigner.sendTransaction({
+                      to: hackedAddress,
+                      value: BigNumber.from(cost),
+                    });
+                  } catch (e) {
+                    console.log({ e });
+                    alert("Error sending ETH to hacked address");
+                  }
+                }}
+              >
+                Click to send ETH to cover Approval of your new address.
+              </Button>
+              <div style={{ padding: 4 }}></div>
+              <Button
+                style={{ width: '500px' }}
+                onClick={async () => {
+                  try {
+                    const cost = await estimateApprovalCost();
+                    console.log("==-- totalCost: ", cost);
+                    await userSigner.sendTransaction({
+                      to: hackedAddress,
+                      value: BigNumber.from(cost),
+                    });
+                  } catch (e) {
+                    console.log({ e });
+                    alert("Error sending ETH to hacked address");
+                  }
+                }}
+              >
+                Click to send ETH to cover Approval of transfer proxy contract
+              </Button>
+              <Divider />
+            {bundle && (
+              <div class="center" style={{ width: "50%" }}>
+                <ReactJson src={bundle} />
+              </div>
+            )}
+            </div>
+            </div>
+            </Route>
+
+          <Route exact path="/approval">
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ padding: 4, width: '500px', }}>
+          <div>{flashbotsRpc}</div>
+            <Input
+            style={{ width: '500px'}}
+              value={bundleUuid}
+              onChange={e => {
+                setBundleUuid(e.target.value);
+              }}
             />
             <Divider />
-            <div>
-              <h2>How to use Flashbots Protect RPC in MetaMask</h2>
-              <div>To add Flashbots Protect RPC endpoint follow these steps:</div>
-              <ol>
-                <li>
-                  Enter your MetaMask and click on your RPC endpoint at the top of your MetaMask. By default it says
-                  “Ethereum mainnet.”
-                </li>
-                <li>Click “Custom RPC”</li>
-                <li>Add https://rpc.flashbots.net with a chainID of 1 and currency of ETH.</li>
-                <li>Scroll to the bottom and click “Save”</li>
-              </ol>
-              <Image
-                src="https://docs.flashbots.net/assets/images/flashbotsRPC-metamask1-1b4ec099182551fc7a8ff47237f4efa2.png"
-                fallback="data:image/png;base64,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"
-              />
-              <Image
-                src="https://docs.flashbots.net/assets/images/flashbotsRPC-metamask2-f416be97f84809e9b976996b7bd2bbe0.png"
-                fallback="data:image/png;base64,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"
-              />
+              This works by calling setApprovalForAll on the given contract from the hacked address to allow the clean address to transfer the hacked address's tokens.<br /> <br />
+              Collection Contract address
+                <AddressInput
+                  placeholder="Enter Collection Contract Address"
+                  ensProvider={mainnetProvider}
+                  value={contractAddress}
+                  onChange={setContractAddress}
+                />
+                Hacked Address
+                <AddressInput
+                  placeholder="Enter HACKED Address"
+                  ensProvider={mainnetProvider}
+                  value={hackedAddress}
+                  onChange={setHackedAddress}
+                />
+                Allow Address
+                <AddressInput
+                  placeholder="Enter Clean UNHACKED Address"
+                  ensProvider={mainnetProvider}
+                  value={toAddress}
+                  onChange={setToAddress}
+                />
+              <div style={{ padding: 4 }}></div>
+                <Button
+                  style={{ width: '500px' }}
+                  onClick={async () => {
+                    try {
+                      if (await userSigner.getAddress() != hackedAddress) {
+                        alert("Switch to the Hacked Account to approve the clean address.");
+                        return;
+                      }
+                      const tx = await theExternalContract.connect(userSigner).setApprovalForAll(toAddress, true);
+                      console.log("tx: ", tx);
+                    } catch (e) {
+                      console.log({ e });
+                    }
+                  }}
+                >
+                  Click to SetApproval to the Collection address for Allow Address
+                </Button>
+
+                <div style={{ padding: 4 }}></div>
+                <Button
+                  style={{ width: '500px' }}
+                  onClick={async () => {
+                    try {
+                      if (await userSigner.getAddress() != hackedAddress) {
+                        alert("Switch to the Hacked Account to approve the clean address.");
+                        return;
+                      }
+                      const tx = await theExternalContract.connect(userSigner).setApprovalForAll(transferAddress, true);
+                      console.log("tx: ", tx);
+                    } catch (e) {
+                      console.log({ e });
+                    }
+                  }}
+                >
+                  Click to SetApproval to the collection address for the transfer proxy contract.
+                </Button>
+            </div>
+            </div>
+          <Divider />
+            {bundle && (
+              <div class="center" style={{ width: "50%" }}>
+                <ReactJson src={bundle} />
+              </div>
+            )}
+
+            <Divider />
+          </Route>
+          <Route exact path="/transfer">
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ padding: 4, width: '500px', }}>
+          <div>{flashbotsRpc}</div>
+            <Input
+            style={{ width: '500px'}}
+              value={bundleUuid}
+              onChange={e => {
+                setBundleUuid(e.target.value);
+              }}
+            />
+            <Divider />
+            For now this has to be called in its own bundle / transaction. <br />
+            That means you need to create a new bundle on the previous tab and then submit it separately. <br />
+            <div style={{ padding: 4 }}></div>
+            Enter Collection address: 
+              <div style={{ padding: 4 }}>
+                <AddressInput
+                  placeholder="Enter Collection Contract Address"
+                  ensProvider={mainnetProvider}
+                  value={contractAddress}
+                  onChange={setContractAddress}
+                />
+            </div>
+
+            From/Hacked address with assets to transfer: 
+              <div style={{ padding: 4 }}>
+                <AddressInput
+                  placeholder="Enter Hacked Address with assets here"
+                  ensProvider={mainnetProvider}
+                  value={hackedAddress}
+                  onChange={hackedAddress}
+                />
+            </div>
+
+            Enter Receiver address: 
+              <div style={{ padding: 4 }}>
+                <AddressInput
+                  placeholder="Enter the address to receive the assets here"
+                  ensProvider={mainnetProvider}
+                  value={toAddress}
+                  onChange={toAddress}
+                />
+            </div>
+            </div>
+              <div>Enter TokenIds one per line to transfer below limited to 25 per transaction:</div>
+                <TextArea
+                style={{ width: '600px' }}
+                  rows={6}
+                  placeholder="Enter TokenIds one per line."
+                  value={tokenIds}
+                  onChange={e => {
+                    //setContractABI(e.target.value);
+                    //console.log(e.target.value)
+                    setTokenIds(e.target.value);
+                  }}
+                />
+              <div style={{ padding: 4 }}></div>
+              Be sure to connect and submit this transaction from the address you approved in the previous step: <br />
+              {toAddress} <br />
+              <div style={{ padding: 4 }}></div>
+              <Button
+                style={{ width: '500px' }}
+                onClick={async () => {
+                
+                  console.log( tokenIds );
+                  let tokenIdsArray = tokenIds.split('\n').map(item => item.trim()).filter(item => item !== '');
+                  console.log(tokenIdsArray);
+                  if (tokenIdsArray.length > 25) {
+                    alert("Too many tokenIds.  Max 25 per transaction");
+                    return;
+                  }
+
+                  // convert array to big numbers
+                  const tokenIdsArrayBN = tokenIdsArray.map(item => BigNumber.from(item));
+
+                  const tx = await transferContract.connect(userSigner).bulkTransfer(tokenIdsArrayBN, hackedAddress, toAddress, contractAddress);
+                  console.log("tx: ", tx);
+
+                }}
+              >
+                Click to add transaction to bundle
+              </Button>
+              <div style={{ padding: 4 }}></div>
+              {bundle && (
+              <div class="center" style={{ width: "50%" }}>
+              <ReactJson src={bundle} />
+              </div>
+            )}
             </div>
           </Route>
+
         </Switch>
       </BrowserRouter>
       <ThemeSwitch />
