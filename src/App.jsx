@@ -308,7 +308,6 @@ function App(props) {
   //console.log(theExternalContract);
 
   const estimateApprovalCost = async () => { // getGasEstimate
-    if (theExternalContract) {
       let gasLimit = BigNumber.from(APPROVAL_GASLIMIT); // await theExternalContract.estimateGas.setApprovalForAll(toAddress, true);
       console.log("==-- gasLimit: ", gasLimit);
       // mul gaslimit by 2 for 2 setApprovalForAll calls
@@ -326,7 +325,6 @@ function App(props) {
       console.log("==-- fee: ", fee);
       console.log("==-- fee ETH: ", ethers.utils.formatEther(fee));
       return fee;
-    }
   };
 
   let externalContractDisplay = "";
