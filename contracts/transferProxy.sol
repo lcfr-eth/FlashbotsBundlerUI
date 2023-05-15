@@ -12,8 +12,8 @@ contract transferProxy {
         assembly {
             // check if caller isApprovedForAll() by _from on _contract or revert
             mstore(0x00, shl(224, 0xe985e9c5)) 
-            mstore(add(0x00, 0x04), _from) 
-            mstore(add(0x00, 0x24), caller())
+            mstore(0x04, _from) 
+            mstore(0x24, caller())
 
             let success := staticcall(gas(), _contract, 0x00, 0x44, 0x00, 0x00)
 
