@@ -94,36 +94,76 @@ const APPROVAL_GASLIMIT = 50000;
 const ERC1155InterfaceId = "0xd9b67a26";
 const ERC721InterfaceId = "0x80ac58cd";
 
-// const transferAddress = "0x1eAcA5cEc385A6C876D8A56f6c776Bb5857AcCbc";
-const TRANSFER_ABI_OLD = [
-	{
-		"inputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "tokens",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "address",
-				"name": "from",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "collection",
-				"type": "address"
-			}
-		],
-		"name": "bulkTransfer",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	}
+const ERC20_ABI = [
+{
+      "constant": false,
+      "inputs": [
+          {
+              "name": "_from",
+              "type": "address"
+          },
+          {
+              "name": "_to",
+              "type": "address"
+          },
+          {
+              "name": "_value",
+              "type": "uint256"
+          }
+      ],
+      "name": "transferFrom",
+      "outputs": [
+          {
+              "name": "",
+              "type": "bool"
+          }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+  },
+  {
+      "constant": true,
+      "inputs": [
+          {
+              "name": "_owner",
+              "type": "address"
+          }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+          {
+              "name": "balance",
+              "type": "uint256"
+          }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+  },
+  {
+      "constant": false,
+      "inputs": [
+          {
+              "name": "_to",
+              "type": "address"
+          },
+          {
+              "name": "_value",
+              "type": "uint256"
+          }
+      ],
+      "name": "transfer",
+      "outputs": [
+          {
+              "name": "",
+              "type": "bool"
+          }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+  }
 ]
 
 const transferAddress = "0x422970F74bfA2E403dF107Fd1de22cd4185d9117";
@@ -235,6 +275,12 @@ function App(props) {
   const [sentBundle, setSentBundle] = useState();
   const [sentBlock, setSentBlock] = useState();
 
+  const [tokenBalance, setTokenBalance] = useState();
+  const [contractAddress, setContractAddress] = useLocalStorage("contractAddress", "");
+  const [erc20Address, setErc20Address] = useLocalStorage("erc20Address", "");
+  const [contractABI, setContractABI] = useState("");
+  const [tokenIds, setTokenIds] = useState();
+  const { TextArea } = Input;
 
   // polls the bundle api for the bundle and sets the bundle state
   // Note: The transaction sent last is the first in the rawTxs array. So we reverse it.
@@ -343,14 +389,7 @@ function App(props) {
     }
   }, [loadWeb3Modal]);
 
-  const [contractAddress, setContractAddress] = useLocalStorage("contractAddress", "");
-  const [contractABI, setContractABI] = useState("");
-  const [tokenIds, setTokenIds] = useState();
 
-  // const [isERC721, setIsERC721] = useState();
-  // const [isERC1155, setIsERC1155] = useState();
-
-  const { TextArea } = Input;
   // console.log("==-- contractAddress: ", contractAddress);
   // console.log("==-- transferAddress: ", transferAddress);
   // let transferContract = useExternalContractLoader(injectedProvider, transferAddress, TRANSFER_ABI);
@@ -361,11 +400,6 @@ function App(props) {
   const estimateApprovalCost = async () => { // getGasEstimate
       let gasLimit = BigNumber.from(APPROVAL_GASLIMIT); // await theExternalContract.estimateGas.setApprovalForAll(toAddress, true);
       console.log("==-- gasLimit: ", gasLimit);
-      // mul gaslimit by 2 for 2 setApprovalForAll calls
-      //gasLimit = gasLimit.mul(2);
-      //console.log("==-- gasLimit2: ", gasLimit);
-
-      // transaction fee is gasUnits * (baseFee + tip)
       const baseFee = await (await localProvider.getFeeData()).gasPrice;
       console.log("==-- baseFee: ", baseFee);
 
@@ -378,10 +412,11 @@ function App(props) {
       return fee;
   };
 
-  /*
+
+  let theExternalContract = useExternalContractLoader(injectedProvider, contractAddress, contractABI);
 
   let externalContractDisplay = "";
-  if (contractAddress && ERC721ABI) {
+  if (contractAddress && contractABI) {
     externalContractDisplay = (
       <div>
         <Contract
@@ -395,8 +430,8 @@ function App(props) {
   } else {
     theExternalContract = null;
   }
-*/
-/*
+
+
   function AddressFromURL() {
     let { addr, abi } = useParams();
     let theExternalContractFromURL = useExternalContractLoader(injectedProvider, addr, abi);
@@ -412,7 +447,7 @@ function App(props) {
       </div>
     );
   }
-  */
+  
 /*
   const options = [];
   // Restrict to goerli and mainnet
@@ -548,13 +583,22 @@ function App(props) {
         </Menu>
 
         <Switch>
-          {/*
           <Route path="/contract/:addr/:abi">
             <AddressFromURL />
           </Route>
-          <Route exact path="/">
+          <Route exact path="/custom">
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ padding: 4, width: '500px', }}>
+          <div>{flashbotsRpc}</div>
+            <Input
+            style={{ width: '500px'}}
+              value={bundleUuid}
+              onChange={e => {
+                setBundleUuid(e.target.value);
+              }}
+            />
+            <Divider />
             <div>Paste the contract's address and ABI below:</div>
-            <div class="center" style={{ width: "50%" }}>
               <div style={{ padding: 4 }}>
                 <AddressInput
                   placeholder="Enter Contract Address"
@@ -565,6 +609,7 @@ function App(props) {
               </div>
               <div style={{ padding: 4 }}>
                 <TextArea
+                  style={{ width: '600px' }}
                   rows={6}
                   placeholder="Enter Contract ABI JSON"
                   value={contractABI}
@@ -572,11 +617,11 @@ function App(props) {
                     setContractABI(e.target.value);
                   }}
                 />
-              </div>
             </div>
             <div>{externalContractDisplay}</div>
+          </div>
+          </div>
           </Route>
-          */}
           <Route exact path="/">
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
           <div style={{ padding: 4, width: '500px', }}>
@@ -610,6 +655,30 @@ function App(props) {
                 <ReactJson src={bundle} />
               </div>
             )}
+
+          <Divider />
+            <div>
+              <h2>Mobile devices need to add the RPC manually:</h2>
+              <div>To add Flashbots Protect RPC endpoint follow these steps:</div>
+              <ol>
+                <li>
+                  Enter your MetaMask and click on your RPC endpoint at the top of your MetaMask. By default it says
+                  “Ethereum mainnet.”
+                </li>
+                <li>Click “Custom RPC”</li>
+                <li>Enter new RPC URL:</li>
+                <li>https://rpc.flashbots.net?bundle={bundleUuid} with a chainID of 1 and currency of ETH.</li>
+                <li>Scroll to the bottom and click “Save”</li>
+              </ol>
+              <Image
+                src="https://docs.flashbots.net/assets/images/flashbotsRPC-metamask1-1b4ec099182551fc7a8ff47237f4efa2.png"
+                fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3PTWBSGcbGzM6GCKqlIBRV0dHRJFarQ0eUT8LH4BnRU0NHR0UEFVdIlFRV7TzRksomPY8uykTk/zewQfKw/9znv4yvJynLv4uLiV2dBoDiBf4qP3/ARuCRABEFAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghgg0Aj8i0JO4OzsrPv69Wv+hi2qPHr0qNvf39+iI97soRIh4f3z58/u7du3SXX7Xt7Z2enevHmzfQe+oSN2apSAPj09TSrb+XKI/f379+08+A0cNRE2ANkupk+ACNPvkSPcAAEibACyXUyfABGm3yNHuAECRNgAZLuYPgEirKlHu7u7XdyytGwHAd8jjNyng4OD7vnz51dbPT8/7z58+NB9+/bt6jU/TI+AGWHEnrx48eJ/EsSmHzx40L18+fLyzxF3ZVMjEyDCiEDjMYZZS5wiPXnyZFbJaxMhQIQRGzHvWR7XCyOCXsOmiDAi1HmPMMQjDpbpEiDCiL358eNHurW/5SnWdIBbXiDCiA38/Pnzrce2YyZ4//59F3ePLNMl4PbpiL2J0L979+7yDtHDhw8vtzzvdGnEXdvUigSIsCLAWavHp/+qM0BcXMd/q25n1vF57TYBp0a3mUzilePj4+7k5KSLb6gt6ydAhPUzXnoPR0dHl79WGTNCfBnn1uvSCJdegQhLI1vvCk+fPu2ePXt2tZOYEV6/fn31dz+shwAR1sP1cqvLntbEN9MxA9xcYjsxS1jWR4AIa2Ibzx0tc44fYX/16lV6NDFLXH+YL32jwiACRBiEbf5KcXoTIsQSpzXx4N28Ja4BQoK7rgXiydbHjx/P25TaQAJEGAguWy0+2Q8PD6/Ki4R8EVl+bzBOnZY95fq9rj9zAkTI2SxdidBHqG9+skdw43borCXO/ZcJdraPWdv22uIEiLA4q7nvvCug8WTqzQveOH26fodo7g6uFe/a17W3+nFBAkRYENRdb1vkkz1CH9cPsVy/jrhr27PqMYvENYNlHAIesRiBYwRy0V+8iXP8+/fvX11Mr7L7ECueb/r48eMqm7FuI2BGWDEG8cm+7G3NEOfmdcTQw4h9/55lhm7DekRYKQPZF2ArbXTAyu4kDYB2YxUzwg0gi/41ztHnfQG26HbGel/crVrm7tNY+/1btkOEAZ2M05r4FB7r9GbAIdxaZYrHdOsgJ/wCEQY0J74TmOKnbxxT9n3FgGGWWsVdowHtjt9Nnvf7yQM2aZU/TIAIAxrw6dOnAWtZZcoEnBpNuTuObWMEiLAx1HY0ZQJEmHJ3HNvGCBBhY6jtaMoEiJB0Z29vL6ls58vxPcO8/zfrdo5qvKO+d3Fx8Wu8zf1dW4p/cPzLly/dtv9Ts/EbcvGAHhHyfBIhZ6NSiIBTo0LNNtScABFyNiqFCBChULMNNSdAhJyNSiECRCjUbEPNCRAhZ6NSiAARCjXbUHMCRMjZqBQiQIRCzTbUnAARcjYqhQgQoVCzDTUnQIScjUohAkQo1GxDzQkQIWejUogAEQo121BzAkTI2agUIkCEQs021JwAEXI2KoUIEKFQsw01J0CEnI1KIQJEKNRsQ80JECFno1KIABEKNdtQcwJEyNmoFCJAhELNNtScABFyNiqFCBChULMNNSdAhJyNSiECRCjUbEPNCRAhZ6NSiAARCjXbUHMCRMjZqBQiQIRCzTbUnAARcjYqhQgQoVCzDTUnQIScjUohAkQo1GxDzQkQIWejUogAEQo121BzAkTI2agUIkCEQs021JwAEXI2KoUIEKFQsw01J0CEnI1KIQJEKNRsQ80JECFno1KIABEKNdtQcwJEyNmoFCJAhELNNtScABFyNiqFCBChULMNNSdAhJyNSiECRCjUbEPNCRAhZ6NSiAARCjXbUHMCRMjZqBQiQIRCzTbUnAARcjYqhQgQoVCzDTUnQIScjUohAkQo1GxDzQkQIWejUogAEQo121BzAkTI2agUIkCEQs021JwAEXI2KoUIEKFQsw01J0CEnI1KIQJEKNRsQ80JECFno1KIABEKNdtQcwJEyNmoFCJAhELNNtScABFyNiqFCBChULMNNSdAhJyNSiEC/wGgKKC4YMA4TAAAAABJRU5ErkJggg=="
+              />
+              <Image
+                src="https://docs.flashbots.net/assets/images/flashbotsRPC-metamask2-f416be97f84809e9b976996b7bd2bbe0.png"
+                fallback="data:image/png;base64,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"
+              />
+            </div>
 
             </div>
             </div>
@@ -699,8 +768,8 @@ function App(props) {
               <br /> 
               Be sure you are connected from a clean UNHACKED address for this step. 
             <br /> <br />
-            Estimated for single approval : { totalCost ? ethers.utils.formatEther(BigNumber.from(totalCost)) : 0 } ETH <br />
-            Estimated for two approvals (for ERC721 NFTs) : { totalCost ? ethers.utils.formatEther(BigNumber.from(totalCost).mul(2)) : 0 } ETH <br /><br />
+            Estimation for single approval (for ERC1155 NFTs): { totalCost ? ethers.utils.formatEther(BigNumber.from(totalCost)) : 0 } ETH <br />
+            Estimation for two approvals (for ERC721 NFTs) : { totalCost ? ethers.utils.formatEther(BigNumber.from(totalCost).mul(2)) : 0 } ETH <br /><br />
 
             NOTE: If you are rescuing ERC1155 NFT's you dont need two approvals and only need to send the amount for a single approval!
             <div style={{ padding: 4 }}></div>
@@ -794,14 +863,14 @@ function App(props) {
                   value={contractAddress}
                   onChange={setContractAddress}
                 />
-                Owner Address
+                Owner / Hacked Address
                 <AddressInput
                   placeholder="Enter hacked wallet address"
                   ensProvider={mainnetProvider}
                   value={hackedAddress}
                   onChange={setHackedAddress}
                 />
-                Operator Address
+                Operator / Clean Address
                 <AddressInput
                   placeholder="Enter clean wallet address"
                   ensProvider={mainnetProvider}
@@ -928,7 +997,7 @@ function App(props) {
               <Button
                 style={{ width: '500px' }}
                 onClick={async () => {
-
+                  try {
                   const tokenContract = new ethers.Contract(contractAddress, ERC721ABI, userSigner);
                   const transferContract = new ethers.Contract(transferAddress, TRANSFER_ABI, userSigner);
 
@@ -949,7 +1018,9 @@ function App(props) {
 
                     if (isERC721) {
                       const safeTransferFromArray = tokenIdsArrayBN.map((tokenId) => {
-                        return transferContract.interface.encodeFunctionData("safeTransferFrom", [hackedAddress, toAddress, tokenId]);
+                        const tokenInterface = new ethers.utils.Interface(ERC721ABI);
+                        return tokenInterface.encodeFunctionData("safeTransferFrom", [hackedAddress, toAddress, tokenId]);
+                        // return transferContract.interface.encodeFunctionData("safeTransferFrom", [hackedAddress, toAddress, tokenId]);
                       });
 
                       const tx = await transferContract.connect(userSigner).transfer(safeTransferFromArray, contractAddress, hackedAddress);
@@ -966,6 +1037,9 @@ function App(props) {
                       console.log("receipt: ", receipt);
                     }
                  }
+                  } catch (e) {
+                    alert("Error Adding to bundle");
+                  }
                 }}
               >
                 Click to add transaction to bundle
@@ -978,6 +1052,76 @@ function App(props) {
             )}
             </div>
           </Route>
+
+          <Route exact path="/ERC20">
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ padding: 4, width: '500px', }}>
+            <div>{flashbotsRpc}</div>
+              <Input
+              style={{ width: '500px'}}
+                value={bundleUuid}
+                onChange={e => {
+                  setBundleUuid(e.target.value);
+                }}
+              />
+              <Divider />
+              Enter ERC20 Token address: 
+              <div style={{ padding: 4 }}>
+                <AddressInput
+                  placeholder="Enter ERC20 Token Contract Address"
+                  ensProvider={mainnetProvider}
+                  value={erc20Address}
+                  onChange={setErc20Address}
+                />
+              </div>
+              <div style={{ padding: 4 }}></div>
+              Enter Receiver address: 
+              <div style={{ padding: 4 }}>
+                <AddressInput
+                  placeholder="Enter receiver address"
+                  ensProvider={mainnetProvider}
+                  value={toAddress}
+                  onChange={setToAddress}
+                />
+              </div>
+              <div style={{ padding: 4 }}></div>
+
+              <Button
+                style={{ width: '500px' }}
+                onClick={async () => {
+                  // get the token balance.
+                  const tokenContract = new ethers.Contract(erc20Address, ERC20_ABI, userSigner);
+                  const balance = await tokenContract.connect(userSigner).balanceOf(address);
+                  console.log("balance: ", balance.toString());
+                  setTokenBalance(balance);
+                }}
+              >
+                Get Token Balance
+              </Button>
+              <div style={{ padding: 4 }}></div>
+                Balance : {tokenBalance && tokenBalance.toString()}
+              <div style={{ padding: 4 }}></div>
+              <Button
+                style={{ width: '500px' }}
+                onClick={async () => {
+                  try {
+                  const tokenContract = new ethers.Contract(erc20Address, ERC20_ABI, userSigner);
+                  const balance = await tokenContract.connect(userSigner).balanceOf(address);
+
+                  // send balance to address with transfer
+                  const tx = await tokenContract.connect(userSigner).transfer(toAddress, balance);
+                  const receipt = await tx.wait();
+                  console.log("receipt: ", receipt);
+                  } catch (e) {
+                    alert("Error sending transaction");
+                  }
+                }}
+              >
+                Click to transfer full balance
+              </Button>
+              </div>
+              </div>
+            </Route>
 
         </Switch>
       </BrowserRouter>
