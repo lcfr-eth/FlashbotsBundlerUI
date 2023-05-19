@@ -12,7 +12,7 @@ export default function Header() {
         style={{ cursor: "pointer" }}
         className="site-page-header"
         avatar={{
-          src: "https://avatars.githubusercontent.com/u/71380475?s=200&v=4",
+          src: "https://dl.openseauserdata.com/cache/originImage/files/a64cab164a02b7b42693af60638671bd.png",
         }}
       />
     </a>
