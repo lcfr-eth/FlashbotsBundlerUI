@@ -31,6 +31,8 @@ import { useContractConfig, useExternalContractLoader, useLocalStorage } from ".
 import { BigNumber } from "@ethersproject/bignumber";
 const { ethers } = require("ethers");
 
+// import { Contract } from "@ethersproject/contracts";
+
 const ERC721ABI = [{
   "constant": true,
   "inputs": [{"internalType": "address", "name": "owner", "type": "address"}, {
@@ -75,12 +77,25 @@ const ERC721ABI = [{
   "outputs": [],
   "stateMutability": "nonpayable",
   "type": "function"
+},{
+  "constant": true,
+    "inputs":[{"internalType":"bytes4","name":"interfaceID","type":"bytes4"}],
+    "name":"supportsInterface",
+    "outputs":[{"internalType":"bool","name":"","type":"bool"}],
+    "payable":false,
+    "stateMutability":"view",
+    "type":"function"
 }]
+
+const ERC1155ABI = [{"inputs":[{"internalType":"contract ENS","name":"_ens","type":"address"},{"internalType":"contract IBaseRegistrar","name":"_registrar","type":"address"},{"internalType":"contract IMetadataService","name":"_metadataService","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"CannotUpgrade","type":"error"},{"inputs":[],"name":"IncompatibleParent","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"IncorrectTargetOwner","type":"error"},{"inputs":[],"name":"IncorrectTokenType","type":"error"},{"inputs":[{"internalType":"bytes32","name":"labelHash","type":"bytes32"},{"internalType":"bytes32","name":"expectedLabelhash","type":"bytes32"}],"name":"LabelMismatch","type":"error"},{"inputs":[{"internalType":"string","name":"label","type":"string"}],"name":"LabelTooLong","type":"error"},{"inputs":[],"name":"LabelTooShort","type":"error"},{"inputs":[],"name":"NameIsNotWrapped","type":"error"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"OperationProhibited","type":"error"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"address","name":"addr","type":"address"}],"name":"Unauthorised","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"controller","type":"address"},{"indexed":false,"internalType":"bool","name":"active","type":"bool"}],"name":"ControllerChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"uint64","name":"expiry","type":"uint64"}],"name":"ExpiryExtended","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"uint32","name":"fuses","type":"uint32"}],"name":"FusesSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"address","name":"owner","type":"address"}],"name":"NameUnwrapped","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"bytes","name":"name","type":"bytes"},{"indexed":false,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint32","name":"fuses","type":"uint32"},{"indexed":false,"internalType":"uint64","name":"expiry","type":"uint64"}],"name":"NameWrapped","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256[]","name":"ids","type":"uint256[]"},{"indexed":false,"internalType":"uint256[]","name":"values","type":"uint256[]"}],"name":"TransferBatch","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"TransferSingle","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"value","type":"string"},{"indexed":true,"internalType":"uint256","name":"id","type":"uint256"}],"name":"URI","type":"event"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"_tokens","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"uint32","name":"fuseMask","type":"uint32"}],"name":"allFusesBurned","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"},{"internalType":"uint256","name":"id","type":"uint256"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"accounts","type":"address[]"},{"internalType":"uint256[]","name":"ids","type":"uint256[]"}],"name":"balanceOfBatch","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"address","name":"addr","type":"address"}],"name":"canExtendSubnames","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"address","name":"addr","type":"address"}],"name":"canModifyName","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"controllers","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ens","outputs":[{"internalType":"contract ENS","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"parentNode","type":"bytes32"},{"internalType":"bytes32","name":"labelhash","type":"bytes32"},{"internalType":"uint64","name":"expiry","type":"uint64"}],"name":"extendExpiry","outputs":[{"internalType":"uint64","name":"","type":"uint64"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"id","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"operator","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"id","type":"uint256"}],"name":"getData","outputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint32","name":"fuses","type":"uint32"},{"internalType":"uint64","name":"expiry","type":"uint64"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"parentNode","type":"bytes32"},{"internalType":"bytes32","name":"labelhash","type":"bytes32"}],"name":"isWrapped","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"isWrapped","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"metadataService","outputs":[{"internalType":"contract IMetadataService","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"names","outputs":[{"internalType":"bytes","name":"","type":"bytes"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"onERC721Received","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"id","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_token","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"recoverFunds","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"label","type":"string"},{"internalType":"address","name":"wrappedOwner","type":"address"},{"internalType":"uint256","name":"duration","type":"uint256"},{"internalType":"address","name":"resolver","type":"address"},{"internalType":"uint16","name":"ownerControlledFuses","type":"uint16"}],"name":"registerAndWrapETH2LD","outputs":[{"internalType":"uint256","name":"registrarExpiry","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"registrar","outputs":[{"internalType":"contract IBaseRegistrar","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"}],"name":"renew","outputs":[{"internalType":"uint256","name":"expires","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256[]","name":"ids","type":"uint256[]"},{"internalType":"uint256[]","name":"amounts","type":"uint256[]"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeBatchTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"parentNode","type":"bytes32"},{"internalType":"bytes32","name":"labelhash","type":"bytes32"},{"internalType":"uint32","name":"fuses","type":"uint32"},{"internalType":"uint64","name":"expiry","type":"uint64"}],"name":"setChildFuses","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"controller","type":"address"},{"internalType":"bool","name":"active","type":"bool"}],"name":"setController","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"uint16","name":"ownerControlledFuses","type":"uint16"}],"name":"setFuses","outputs":[{"internalType":"uint32","name":"","type":"uint32"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"contract IMetadataService","name":"_metadataService","type":"address"}],"name":"setMetadataService","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"resolver","type":"address"},{"internalType":"uint64","name":"ttl","type":"uint64"}],"name":"setRecord","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"address","name":"resolver","type":"address"}],"name":"setResolver","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"parentNode","type":"bytes32"},{"internalType":"string","name":"label","type":"string"},{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint32","name":"fuses","type":"uint32"},{"internalType":"uint64","name":"expiry","type":"uint64"}],"name":"setSubnodeOwner","outputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"parentNode","type":"bytes32"},{"internalType":"string","name":"label","type":"string"},{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"resolver","type":"address"},{"internalType":"uint64","name":"ttl","type":"uint64"},{"internalType":"uint32","name":"fuses","type":"uint32"},{"internalType":"uint64","name":"expiry","type":"uint64"}],"name":"setSubnodeRecord","outputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"uint64","name":"ttl","type":"uint64"}],"name":"setTTL","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"contract INameWrapperUpgrade","name":"_upgradeAddress","type":"address"}],"name":"setUpgradeContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"parentNode","type":"bytes32"},{"internalType":"bytes32","name":"labelhash","type":"bytes32"},{"internalType":"address","name":"controller","type":"address"}],"name":"unwrap","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"labelhash","type":"bytes32"},{"internalType":"address","name":"registrant","type":"address"},{"internalType":"address","name":"controller","type":"address"}],"name":"unwrapETH2LD","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes","name":"name","type":"bytes"},{"internalType":"bytes","name":"extraData","type":"bytes"}],"name":"upgrade","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"upgradeContract","outputs":[{"internalType":"contract INameWrapperUpgrade","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"uri","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes","name":"name","type":"bytes"},{"internalType":"address","name":"wrappedOwner","type":"address"},{"internalType":"address","name":"resolver","type":"address"}],"name":"wrap","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"label","type":"string"},{"internalType":"address","name":"wrappedOwner","type":"address"},{"internalType":"uint16","name":"ownerControlledFuses","type":"uint16"},{"internalType":"address","name":"resolver","type":"address"}],"name":"wrapETH2LD","outputs":[{"internalType":"uint64","name":"expiry","type":"uint64"}],"stateMutability":"nonpayable","type":"function"}]
 
 const APPROVAL_GASLIMIT = 50000;
 
-const transferAddress = "0x1eAcA5cEc385A6C876D8A56f6c776Bb5857AcCbc";
-const TRANSFER_ABI = [
+const ERC1155InterfaceId = "0xd9b67a26";
+const ERC721InterfaceId = "0x80ac58cd";
+
+// const transferAddress = "0x1eAcA5cEc385A6C876D8A56f6c776Bb5857AcCbc";
+const TRANSFER_ABI_OLD = [
 	{
 		"inputs": [
 			{
@@ -109,6 +124,38 @@ const TRANSFER_ABI = [
 		"stateMutability": "nonpayable",
 		"type": "function"
 	}
+]
+
+const transferAddress = "0x422970F74bfA2E403dF107Fd1de22cd4185d9117";
+const TRANSFER_ABI = [
+  {
+    "inputs": [],
+    "name": "notApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "_data",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "address",
+        "name": "_contract",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_from",
+        "type": "address"
+      }
+    ],
+    "name": "transfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
 ]
 
 /// 📡 What chain are your contracts deployed to?
@@ -183,6 +230,7 @@ function App(props) {
   const [bundleUuid, setBundleUuid] = useLocalStorage("bundleUuid", "");
   const [totalCost, setTotalCost] = useLocalStorage("totalCost", "");
   const [costEth, setCostEth] = useState();
+  const [txValue, setTxValue] = useState();
   const [txHashes, setTxHashes] = useState([]);
   const [sentBundle, setSentBundle] = useState();
   const [sentBlock, setSentBlock] = useState();
@@ -297,15 +345,18 @@ function App(props) {
 
   const [contractAddress, setContractAddress] = useLocalStorage("contractAddress", "");
   const [contractABI, setContractABI] = useState("");
-  const [tokenIds, setTokenIds] = useState("");
+  const [tokenIds, setTokenIds] = useState();
+
+  // const [isERC721, setIsERC721] = useState();
+  // const [isERC1155, setIsERC1155] = useState();
+
   const { TextArea } = Input;
-  console.log("==-- contractAddress: ", contractAddress);
-  console.log("==-- transferAddress: ", transferAddress);
-  let transferContract = useExternalContractLoader(injectedProvider, transferAddress, TRANSFER_ABI);
-  console.log("==-- transferContract: ", transferContract);
-  let theExternalContract = useExternalContractLoader(injectedProvider, contractAddress, ERC721ABI);
-  console.log("==-- theExternalContract: ", theExternalContract);
-  //console.log(theExternalContract);
+  // console.log("==-- contractAddress: ", contractAddress);
+  // console.log("==-- transferAddress: ", transferAddress);
+  // let transferContract = useExternalContractLoader(injectedProvider, transferAddress, TRANSFER_ABI);
+  // let theExternalContract = useExternalContractLoader(injectedProvider, contractAddress, ERC721ABI);
+  // console.log("==-- theExternalContract: ", theExternalContract);
+  // console.log(theExternalContract);
 
   const estimateApprovalCost = async () => { // getGasEstimate
       let gasLimit = BigNumber.from(APPROVAL_GASLIMIT); // await theExternalContract.estimateGas.setApprovalForAll(toAddress, true);
@@ -327,6 +378,8 @@ function App(props) {
       return fee;
   };
 
+  /*
+
   let externalContractDisplay = "";
   if (contractAddress && ERC721ABI) {
     externalContractDisplay = (
@@ -342,7 +395,8 @@ function App(props) {
   } else {
     theExternalContract = null;
   }
-
+*/
+/*
   function AddressFromURL() {
     let { addr, abi } = useParams();
     let theExternalContractFromURL = useExternalContractLoader(injectedProvider, addr, abi);
@@ -358,6 +412,7 @@ function App(props) {
       </div>
     );
   }
+  */
 /*
   const options = [];
   // Restrict to goerli and mainnet
@@ -442,7 +497,7 @@ function App(props) {
               }}
               to="/approval"
             >
-              Set Approvals
+              Set NFT Approvals
             </Link>
           </Menu.Item>
 
@@ -454,6 +509,28 @@ function App(props) {
               to="/transfer"
             >
               Transfer NFTs
+            </Link>
+          </Menu.Item>
+
+          <Menu.Item key="/ERC20">
+            <Link
+              onClick={() => {
+                setRoute("/ERC20");
+              }}
+              to="/ERC20"
+            >
+              ERC20 Tokens
+            </Link>
+          </Menu.Item>
+
+          <Menu.Item key="/custom">
+            <Link
+              onClick={() => {
+                setRoute("/custom");
+              }}
+              to="/custom"
+            >
+              Custom Contract
             </Link>
           </Menu.Item>
 
@@ -622,16 +699,20 @@ function App(props) {
               <br /> 
               Be sure you are connected from a clean UNHACKED address for this step. 
             <br /> <br />
-            Estimated Cost Per Approval : { totalCost ? ethers.utils.formatEther(totalCost) : 0 } ETH <br />
+            Estimated for single approval : { totalCost ? ethers.utils.formatEther(BigNumber.from(totalCost)) : 0 } ETH <br />
+            Estimated for two approvals (for ERC721 NFTs) : { totalCost ? ethers.utils.formatEther(BigNumber.from(totalCost).mul(2)) : 0 } ETH <br /><br />
+
+            NOTE: If you are rescuing ERC1155 NFT's you dont need two approvals and only need to send the amount for a single approval!
+            <div style={{ padding: 4 }}></div>
               <Button
                 style={{ width: '500px'}}
                 onClick={async () => {
                   try {
                     const gasLimit = await estimateApprovalCost();
                     setTotalCost(gasLimit.toString());
-                    const costEth = ethers.utils.formatEther(gasLimit);
-                    console.log("==-- cost ETH: ", costEth);
-                    setCostEth(costEth);
+                    // const costEth = ethers.utils.formatEther(gasLimit);
+                    // console.log("==-- cost ETH: ", costEth);
+                    // setCostEth(costEth);
                   } catch (e) {
                     console.log({ e });
                   }
@@ -648,15 +729,29 @@ function App(props) {
                   onChange={setHackedAddress}
                 />
                 <div style={{ padding: 4 }}></div>
+
+                Amount
+                <EtherInput
+                  price={price}
+                  value={txValue}
+                  onChange={value => {
+                    setTxValue(value);
+                  }}
+                />
+                <div style={{ padding: 4 }}></div>
+
                 <Button
                 style={{ width: '500px' }}
                 onClick={async () => {
+                  console.log("txValue: ", txValue);
+                  const sendValue = ethers.utils.parseEther(txValue);
+                  console.log("sendValue: ", sendValue);
                   try {
                     const cost = await estimateApprovalCost();
                     console.log("==-- totalCost: ", cost);
                     await userSigner.sendTransaction({
                       to: hackedAddress,
-                      value: BigNumber.from(cost),
+                      value: sendValue,
                     });
                   } catch (e) {
                     console.log({ e });
@@ -664,27 +759,11 @@ function App(props) {
                   }
                 }}
               >
-                Click to send ETH to cover Approval of your new address.
+                Click to send ETH
               </Button>
+
               <div style={{ padding: 4 }}></div>
-              <Button
-                style={{ width: '500px' }}
-                onClick={async () => {
-                  try {
-                    const cost = await estimateApprovalCost();
-                    console.log("==-- totalCost: ", cost);
-                    await userSigner.sendTransaction({
-                      to: hackedAddress,
-                      value: BigNumber.from(cost),
-                    });
-                  } catch (e) {
-                    console.log({ e });
-                    alert("Error sending ETH to hacked address");
-                  }
-                }}
-              >
-                Click to send ETH to cover Approval of transfer proxy contract
-              </Button>
+
               <Divider />
             {bundle && (
               <div class="center" style={{ width: "50%" }}>
@@ -715,16 +794,16 @@ function App(props) {
                   value={contractAddress}
                   onChange={setContractAddress}
                 />
-                Hacked Address
+                Owner Address
                 <AddressInput
-                  placeholder="Enter HACKED Address"
+                  placeholder="Enter hacked wallet address"
                   ensProvider={mainnetProvider}
                   value={hackedAddress}
                   onChange={setHackedAddress}
                 />
-                Allow Address
+                Operator Address
                 <AddressInput
-                  placeholder="Enter Clean UNHACKED Address"
+                  placeholder="Enter clean wallet address"
                   ensProvider={mainnetProvider}
                   value={toAddress}
                   onChange={setToAddress}
@@ -733,19 +812,23 @@ function App(props) {
                 <Button
                   style={{ width: '500px' }}
                   onClick={async () => {
+                   const tokenContract = new ethers.Contract(contractAddress, ERC721ABI, userSigner);
+                    console.log("==-- tokenContract: ", tokenContract);
+
                     try {
                       if (await userSigner.getAddress() != hackedAddress) {
                         alert("Switch to the Hacked Account to approve the clean address.");
                         return;
                       }
-                      const tx = await theExternalContract.connect(userSigner).setApprovalForAll(toAddress, true);
+                      const tx = await tokenContract.connect(userSigner).setApprovalForAll(toAddress, true);
                       console.log("tx: ", tx);
                     } catch (e) {
                       console.log({ e });
                     }
+                    
                   }}
                 >
-                  Click to SetApproval to the Collection address for Allow Address
+                  Click to SetApproval to the Collection address for operator address
                 </Button>
 
                 <div style={{ padding: 4 }}></div>
@@ -753,18 +836,22 @@ function App(props) {
                   style={{ width: '500px' }}
                   onClick={async () => {
                     try {
+                      const tokenContract = new ethers.Contract(contractAddress, ERC721ABI, userSigner);
+
+
                       if (await userSigner.getAddress() != hackedAddress) {
                         alert("Switch to the Hacked Account to approve the clean address.");
                         return;
                       }
-                      const tx = await theExternalContract.connect(userSigner).setApprovalForAll(transferAddress, true);
+                      const tx = await tokenContract.connect(userSigner).setApprovalForAll(transferAddress, true);
                       console.log("tx: ", tx);
+
                     } catch (e) {
                       console.log({ e });
                     }
                   }}
                 >
-                  Click to SetApproval to the collection address for the transfer proxy contract.
+                  Click to SetApproval to the transfer proxy contract. ERC721 ONLY.
                 </Button>
             </div>
             </div>
@@ -841,21 +928,44 @@ function App(props) {
               <Button
                 style={{ width: '500px' }}
                 onClick={async () => {
-                
+
+                  const tokenContract = new ethers.Contract(contractAddress, ERC721ABI, userSigner);
+                  const transferContract = new ethers.Contract(transferAddress, TRANSFER_ABI, userSigner);
+
                   console.log( tokenIds );
                   let tokenIdsArray = tokenIds.split('\n').map(item => item.trim()).filter(item => item !== '');
                   console.log(tokenIdsArray);
                   if (tokenIdsArray.length > 25) {
-                    alert("Too many tokenIds.  Max 25 per transaction");
+                    alert("Max 25 per transaction");
                     return;
                   }
 
                   // convert array to big numbers
                   const tokenIdsArrayBN = tokenIdsArray.map(item => BigNumber.from(item));
 
-                  const tx = await transferContract.connect(userSigner).bulkTransfer(tokenIdsArrayBN, hackedAddress, toAddress, contractAddress);
-                  console.log("tx: ", tx);
+                  if (tokenContract) {
+                    const isERC721 = await tokenContract.connect(userSigner).supportsInterface(ERC721InterfaceId);
+                    const isERC1155 = await tokenContract.connect(userSigner).supportsInterface(ERC1155InterfaceId);
 
+                    if (isERC721) {
+                      const safeTransferFromArray = tokenIdsArrayBN.map((tokenId) => {
+                        return transferContract.interface.encodeFunctionData("safeTransferFrom", [hackedAddress, toAddress, tokenId]);
+                      });
+
+                      const tx = await transferContract.connect(userSigner).transfer(safeTransferFromArray, contractAddress, hackedAddress);
+                      const receipt = await tx.wait();
+                      console.log("receipt: ", receipt);
+                    }
+
+                    if (isERC1155) {
+                      console.log("isERC1155");
+                      const erc1155TokenContract = new ethers.Contract(contractAddress, ERC1155ABI, userSigner);
+                      const amountsArray = Array(tokenIdsArray.length).fill(1);
+                      const tx = await erc1155TokenContract.connect(userSigner).safeBatchTransferFrom(hackedAddress, toAddress, tokenIdsArrayBN, amountsArray, "0x");
+                      const receipt = await tx.wait();
+                      console.log("receipt: ", receipt);
+                    }
+                 }
                 }}
               >
                 Click to add transaction to bundle
