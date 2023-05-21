@@ -635,8 +635,8 @@ function App(props) {
 
                       console.log("submitting bundles");
                       console.log("bundle: ", bundle);
-                      // const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
-                      const res = await fetch('https://relay.flashbots.net', {
+                      const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
+                      //const res = await fetch('https://relay.flashbots.net', {
                         method: 'POST',
                         headers: {
                           'Accept': 'application/json',
