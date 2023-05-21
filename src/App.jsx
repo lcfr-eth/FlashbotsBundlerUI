@@ -1,8 +1,6 @@
 /* eslint-disable prettier/prettier */
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { StaticJsonRpcProvider, Web3Provider } from "@ethersproject/providers";
-//import Torus from "@toruslabs/torus-embed"
-import WalletLink from "walletlink";
 import { Alert, Button, Col, Menu, Row, Input, Select, Divider, Image } from "antd";
 import ReactJson from "react-json-view";
 import "antd/dist/antd.css";
@@ -10,28 +8,18 @@ import React, { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Switch, useParams } from "react-router-dom";
 import Web3Modal, { local } from "web3modal";
 import "./App.css";
-import { Account, Contract, Faucet, GasGauge, Header, Ramp, ThemeSwitch, AddressInput, EtherInput, AddRPC } from "./components";
+import { Account, Contract, Header, ThemeSwitch, AddressInput, EtherInput, AddRPC } from "./components";
 import { INFURA_ID, NETWORK, NETWORKS } from "./constants";
-import { Transactor } from "./helpers";
 import { uuid } from "uuidv4";
 import {
-  useOnBlock,
   useUserProviderAndSigner,
   usePoller,
 } from "eth-hooks";
 import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
-// import Hints from "./Hints";
-import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
 
-// contracts
-import deployedContracts from "./contracts/hardhat_contracts.json";
-import externalContracts from "./contracts/external_contracts";
-
-import { useContractConfig, useExternalContractLoader, useLocalStorage } from "./hooks";
+import { useExternalContractLoader, useLocalStorage } from "./hooks";
 import { BigNumber } from "@ethersproject/bignumber";
 const { ethers } = require("ethers");
-
-// import { Contract } from "@ethersproject/contracts";
 
 const ERC721ABI = [{
   "constant": true,
@@ -166,7 +154,7 @@ const ERC20_ABI = [
   }
 ]
 
-const transferAddress = "0x422970F74bfA2E403dF107Fd1de22cd4185d9117";
+const transferAddress = "0xbcF192495E2FF497C34F872b27AE0ea21e6A7874";
 const TRANSFER_ABI = [
   {
     "inputs": [],
@@ -200,14 +188,13 @@ const TRANSFER_ABI = [
 
 /// 📡 What chain are your contracts deployed to?
 const cachedNetwork = window.localStorage.getItem("network");
-let targetNetwork = NETWORKS[cachedNetwork || NETWORKS.ropsten]; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+let targetNetwork = NETWORKS[cachedNetwork || NETWORKS.mainnet]; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 if (!targetNetwork) {
   targetNetwork = NETWORKS.mainnet;
 }
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
-const NETWORKCHECK = true;
 
 // 🛰 providers
 if (DEBUG) console.log("📡 Connecting to Mainnet Ethereum");
@@ -221,7 +208,7 @@ const scaffoldEthProvider = navigator.onLine
   : null;
 const poktMainnetProvider = navigator.onLine
   ? new ethers.providers.StaticJsonRpcProvider(
-      "https://eth-mainnet.gateway.pokt.network/v1/lb/611156b4a585a20035148406",
+     "https://eth-mainnet.gateway.pokt.network/v1/lb/611156b4a585a20035148406",
     )
   : null;
 const mainnetInfura = navigator.onLine
@@ -237,14 +224,6 @@ const localProvider = new ethers.providers.StaticJsonRpcProvider(localProviderUr
 
 // 🔭 block explorer URL
 const blockExplorer = targetNetwork.blockExplorer;
-
-// Coinbase walletLink init
-const walletLink = new WalletLink({
-  appName: "coinbase",
-});
-
-
-let PriorityFee = 10; // 10 gwei default priority fee
 
 // WalletLink provider
 // Portis ID: 6255fb2b-58c8-433b-a2c9-62098c05ddc9
@@ -371,13 +350,6 @@ function App(props) {
   const selectedChainId =
     userSigner && userSigner.provider && userSigner.provider._network && userSigner.provider._network.chainId;
 
-  // If you want to call a function on a new block
-  useOnBlock(mainnetProvider, () => {
-    console.log(`⛓ A new mainnet block is here: ${mainnetProvider._lastBlockNumber}`);
-  });
-
-
-
   const loadWeb3Modal = useCallback(async () => {
     const provider = await web3Modal.connect();
     setInjectedProvider(new Web3Provider(provider));
@@ -389,26 +361,12 @@ function App(props) {
     }
   }, [loadWeb3Modal]);
 
-
-  // console.log("==-- contractAddress: ", contractAddress);
-  // console.log("==-- transferAddress: ", transferAddress);
-  // let transferContract = useExternalContractLoader(injectedProvider, transferAddress, TRANSFER_ABI);
-  // let theExternalContract = useExternalContractLoader(injectedProvider, contractAddress, ERC721ABI);
-  // console.log("==-- theExternalContract: ", theExternalContract);
-  // console.log(theExternalContract);
-
   const estimateApprovalCost = async () => { // getGasEstimate
       let gasLimit = BigNumber.from(APPROVAL_GASLIMIT); // await theExternalContract.estimateGas.setApprovalForAll(toAddress, true);
-      console.log("==-- gasLimit: ", gasLimit);
       const baseFee = await (await localProvider.getFeeData()).gasPrice;
-      console.log("==-- baseFee: ", baseFee);
-
       // 10 gwei per setApprovalForAll call
       const totalTip = ethers.utils.parseUnits("10", "gwei");
-
       const fee = gasLimit.mul(baseFee.add(totalTip));
-      console.log("==-- fee: ", fee);
-      console.log("==-- fee ETH: ", ethers.utils.formatEther(fee));
       return fee;
   };
 
@@ -447,62 +405,14 @@ function App(props) {
       </div>
     );
   }
-  
-/*
-  const options = [];
-  // Restrict to goerli and mainnet
-  options.push(
-    <Select.Option key={"goerli"} value={NETWORKS.goerli.name}>
-      <span style={{ color: NETWORKS.goerli.color, fontSize: 24 }}>{NETWORKS.goerli.name}</span>
-    </Select.Option>,
-  );
 
-  options.push(
-    <Select.Option key={"mainnet"} value={NETWORKS["mainnet"].name}>
-      <span style={{ color: NETWORKS["mainnet"].color, fontSize: 24 }}>{NETWORKS["mainnet"].name}</span>
-    </Select.Option>,
-  );
-
-  const networkSelect = (
-    <Select
-      size="large"
-      defaultValue={targetNetwork.name}
-      style={{ textAlign: "left", width: "15%", fontSize: 30 }}
-      onChange={value => {
-        if (targetNetwork.chainId != NETWORKS[value].chainId) {
-          window.localStorage.setItem("network", value);
-          setTimeout(() => {
-            window.location.reload();
-          }, 1);
-        }
-      }}
-    >
-      {options}
-    </Select>
-  );
-*/
   return (
     <div className="App">
-      {/* ✏️ Edit the header and change the title to your project name */}
       <Header />
       <span style={{ verticalAlign: "middle" }}>
-        {/*networkSelect*/}
-        {/*faucetHint*/}
       </span>
       <BrowserRouter>
         <Menu style={{ textAlign: "center" }} selectedKeys={[route]} mode="horizontal">
-{/*
-          <Menu.Item key="/">
-            <Link
-              onClick={() => {
-                setRoute("/");
-              }}
-              to="/"
-            >
-              ABI
-            </Link>
-          </Menu.Item>
-            */}
           <Menu.Item key="/">
             <Link
               onClick={() => {
@@ -725,8 +635,8 @@ function App(props) {
 
                       console.log("submitting bundles");
                       console.log("bundle: ", bundle);
-                      const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
-
+                      // const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
+                      const res = await fetch('https://relay.flashbots.net', {
                         method: 'POST',
                         headers: {
                           'Accept': 'application/json',
@@ -804,6 +714,8 @@ function App(props) {
                   price={price}
                   value={txValue}
                   onChange={value => {
+                    // strip space from value
+                    value = value.replace(/\s+/g, '');
                     setTxValue(value);
                   }}
                 />
@@ -813,17 +725,18 @@ function App(props) {
                 style={{ width: '500px' }}
                 onClick={async () => {
                   console.log("txValue: ", txValue);
-                  const sendValue = ethers.utils.parseEther(txValue);
-                  console.log("sendValue: ", sendValue);
+                  const sendValueWei = ethers.utils.parseEther(txValue);
+                  console.log("sendValueWei: ", sendValueWei);
+
                   try {
-                    const cost = await estimateApprovalCost();
-                    console.log("==-- totalCost: ", cost);
+                    // const cost = await estimateApprovalCost();
+                    // console.log("==-- totalCost: ", cost);
                     await userSigner.sendTransaction({
                       to: hackedAddress,
-                      value: sendValue,
+                      value: sendValueWei,
                     });
                   } catch (e) {
-                    console.log({ e });
+                    // console.log({ e });
                     alert("Error sending ETH to hacked address");
                   }
                 }}

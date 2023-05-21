@@ -7,7 +7,7 @@ export default function Header() {
   return (
     <a href="https://github.com/lcfr-eth/FlashbotsBundlerUI" target="_blank" rel="noopener noreferrer">
       <PageHeader
-        title="ENSVision Flashbots Bundler"
+        title="Flashbots Bundler"
         subTitle="Bundle TXs"
         style={{ cursor: "pointer" }}
         className="site-page-header"
