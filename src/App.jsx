@@ -674,10 +674,9 @@ function App(props) {
               }}
             />
             <Divider />
-              This step sends ETH to the hacked address to cover the cost of the approval transaction(s). 
-              <br /> 
-              Be sure you are connected from a clean UNHACKED address for this step. 
-            <br /> <br />
+            <div>Connect unhacked wallet to fund the transactions for this step. </div>
+            <div>This step sends ETH to the hacked address to cover the cost of the approval(s).</div>
+            <div style={{ padding: 4 }}></div>
             Estimation for single approval (for ERC1155 NFTs): { totalCost ? ethers.utils.formatEther(BigNumber.from(totalCost)) : 0 } ETH <br />
             Estimation for two approvals (for ERC721 NFTs) : { totalCost ? ethers.utils.formatEther(BigNumber.from(totalCost).mul(2)) : 0 } ETH <br /><br />
 
@@ -768,7 +767,8 @@ function App(props) {
               }}
             />
             <Divider />
-              This works by calling setApprovalForAll on the given contract from the hacked address to allow the clean address to transfer the hacked address's tokens.<br /> <br />
+              <div> Connect the hacked wallet for this step. </div>
+              <div>This works by calling setApprovalForAll on the given contract from the hacked address to allow the operator address to transfer the hacked address's NFTs.</div><br />
               Collection Contract address
                 <AddressInput
                   placeholder="Enter Collection Contract Address"
@@ -858,8 +858,8 @@ function App(props) {
               }}
             />
             <Divider />
-            For now this has to be called in its own bundle / transaction. <br />
-            That means you need to create a new bundle on the previous tab and then submit it separately. <br />
+            <div>If transferring ERC721 tokens connect the approved wallet.</div>
+            <div>If transferring ERC1155 connect as the owner/hacked wallet.</div>
             <div style={{ padding: 4 }}></div>
             Enter Collection address: 
               <div style={{ padding: 4 }}>
