@@ -635,9 +635,11 @@ function App(props) {
 
                       console.log("submitting bundles");
                       console.log("bundle: ", bundle);
-                      const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
-                      //const res = await fetch('https://relay.flashbots.net', {
+                      // const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
+                      // use official flashbots relay with no cors issues.
+                      const res = await fetch('https://rpc.flashbots.net/', {
                         method: 'POST',
+                        // mode: 'no-cors', // no-cors, *cors, same-origin
                         headers: {
                           'Accept': 'application/json',
                           'Content-Type': 'application/json'
