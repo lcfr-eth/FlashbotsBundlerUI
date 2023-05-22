@@ -877,7 +877,7 @@ function App(props) {
                   placeholder="Enter Hacked Address with assets here"
                   ensProvider={mainnetProvider}
                   value={hackedAddress}
-                  onChange={hackedAddress}
+                  onChange={setHackedAddress}
                 />
             </div>
 
@@ -887,7 +887,7 @@ function App(props) {
                   placeholder="Enter the address to receive the assets here"
                   ensProvider={mainnetProvider}
                   value={toAddress}
-                  onChange={toAddress}
+                  onChange={setToAddress}
                 />
             </div>
             </div>
@@ -903,9 +903,6 @@ function App(props) {
                     setTokenIds(e.target.value);
                   }}
                 />
-              <div style={{ padding: 4 }}></div>
-              Be sure to connect and submit this transaction from the address you approved in the previous step: <br />
-              {toAddress} <br />
               <div style={{ padding: 4 }}></div>
               <Button
                 style={{ width: '500px' }}
