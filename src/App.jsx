@@ -635,24 +635,44 @@ function App(props) {
 
                       console.log("submitting bundles");
                       console.log("bundle: ", bundle);
-                      // const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
+
+                      const hexBlockNumber = ethers.utils.hexlify(blockNumber+10);
+                      // strip any leading 0x00 bytes from hexBlockNumber
+                      const target_block = hexBlockNumber.replace(/^0x0+/, '0x');
                       // use official flashbots relay with no cors issues.
-                      const res = await fetch('https://rpc.flashbots.net/', {
-                        method: 'POST',
-                        // mode: 'no-cors', // no-cors, *cors, same-origin
-                        headers: {
-                          'Accept': 'application/json',
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({signedTransactions: bundle})
+                      const RPCRequest = JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "eth_sendBundle",
+                        params: [
+                         {
+                            txs: bundle,
+                            blockNumber: target_block,
+                          },
+                        ],
+                        id: 1
                       })
-                      
+
+                      console.log("RPCRequest: ", RPCRequest);
+                      // idk whos rpc this is? but its nice for submitting bundles of signed txs
+                      // const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
+                      const res = await fetch('https://rpc.payload.de', {
+                        method: 'POST',
+                        headers: {
+                         // 'Accept': 'application/json',
+                          'Content-Type': 'application/json',
+                          // 'X-Flashbots-Signature': wallet.address + ':' + signature
+                        },
+                        body: RPCRequest
+                        // body: JSON.stringify({signedTransactions: bundle})
+                      })
+                  
                       const resJson = await res.json()
                       console.log({resJson})
+                      console.log("resJson: ", resJson);
                       console.log("bundles submitted");
                       alert("Bundles submitted");
                     } catch (error) {
-                      console.log({error})
+                      console.log(error);
                     }
                   }}
                 >
