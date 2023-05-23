@@ -186,45 +186,29 @@ const TRANSFER_ABI = [
   }
 ]
 
-/// 📡 What chain are your contracts deployed to?
+
 const cachedNetwork = window.localStorage.getItem("network");
-let targetNetwork = NETWORKS[cachedNetwork || NETWORKS.mainnet]; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+let targetNetwork = NETWORKS[cachedNetwork || NETWORKS.mainnet];
 if (!targetNetwork) {
   targetNetwork = NETWORKS.mainnet;
 }
 
-// 😬 Sorry for all the console logging
 const DEBUG = true;
-
-const poktMainnetProvider = navigator.onLine
-  ? new ethers.providers.StaticJsonRpcProvider(
-     "https://eth-mainnet.gateway.pokt.network/v1/lb/611156b4a585a20035148406",
-    )
-  : null;
 
 const mainnetInfura = navigator.onLine
   ? new ethers.providers.StaticJsonRpcProvider("https://mainnet.infura.io/v3/" + INFURA_ID)
   : null;
-// ( ⚠️ Getting "failed to meet quorum" errors? Check your INFURA_ID
-// 🏠 Your local provider is usually pointed at your local blockchain
+
 const localProviderUrl = targetNetwork.rpcUrl;
-// as you deploy to other networks you can set REACT_APP_PROVIDER=https://dai.poa.network in packages/react-app/.env
 const localProviderUrlFromEnv = process.env.REACT_APP_PROVIDER ? process.env.REACT_APP_PROVIDER : localProviderUrl;
+
 if (DEBUG) console.log("🏠 Connecting to provider:", localProviderUrlFromEnv);
 const localProvider = new ethers.providers.StaticJsonRpcProvider(localProviderUrl);
-
-// 🔭 block explorer URL
 const blockExplorer = targetNetwork.blockExplorer;
 
-// WalletLink provider
-// Portis ID: 6255fb2b-58c8-433b-a2c9-62098c05ddc9
 
 function App(props) {
   const mainnetProvider = mainnetInfura;
-  
-   // poktMainnetProvider && poktMainnetProvider._isProvider
-   //   ? poktMainnetProvider
-   //   : mainnetInfura;
 
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
@@ -261,6 +245,7 @@ function App(props) {
         const bundleJson = await bundle.json();
         console.log({ bundleJson });
         if (bundleJson.rawTxs) {
+          // reverse the order of the txs so the last tx is first
           setBundle(bundleJson?.rawTxs.reverse());
         }
       }
@@ -281,7 +266,7 @@ function App(props) {
         const currentBlock = await userSigner.provider.getBlockNumber();
 
         // use ethers getTransactionReceipt to check if the txHashes are in a block
-        const txReceipt = await localProvider.getTransactionReceipt(txHashes[0]);
+        const txReceipt = await userSigner.provider.getTransactionReceipt(txHashes[0]);
         if (txReceipt && txReceipt.blockNumber) {
           alert("Bundle mined in block " + txReceipt.blockNumber);
           setSentBundle();
@@ -353,7 +338,7 @@ function App(props) {
 
   const estimateApprovalCost = async () => { // getGasEstimate
       let gasLimit = BigNumber.from(APPROVAL_GASLIMIT); // await theExternalContract.estimateGas.setApprovalForAll(toAddress, true);
-      const baseFee = await (await localProvider.getFeeData()).gasPrice;
+      const baseFee = await (await userSigner.provider.getFeeData()).gasPrice;
       // 10 gwei per setApprovalForAll call
       const totalTip = ethers.utils.parseUnits("10", "gwei");
       const fee = gasLimit.mul(baseFee.add(totalTip));
@@ -610,7 +595,7 @@ function App(props) {
                         return;
                       }
                       // get the current block number
-                      const blockNumber = await localProvider.getBlockNumber();
+                      const blockNumber = await userSigner.provider.getBlockNumber();
                       console.log("blockNumber: ", blockNumber);
                       // set SentBlock to current block number
                       setSentBlock(blockNumber);
@@ -656,9 +641,9 @@ function App(props) {
                         // body: JSON.stringify({signedTransactions: bundle})
                       })
                   
-                      const resJson = await res.json()
-                      console.log({resJson})
-                      console.log("resJson: ", resJson);
+                      // const resJson = await res.json()
+                      // console.log({resJson})
+                      // console.log("resJson: ", resJson);
                       console.log("bundles submitted");
                       alert("Bundles submitted");
                     } catch (error) {
@@ -701,9 +686,6 @@ function App(props) {
                   try {
                     const gasLimit = await estimateApprovalCost();
                     setTotalCost(gasLimit.toString());
-                    // const costEth = ethers.utils.formatEther(gasLimit);
-                    // console.log("==-- cost ETH: ", costEth);
-                    // setCostEth(costEth);
                   } catch (e) {
                     console.log({ e });
                   }
