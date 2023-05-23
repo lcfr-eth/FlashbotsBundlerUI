@@ -196,21 +196,12 @@ if (!targetNetwork) {
 // 😬 Sorry for all the console logging
 const DEBUG = true;
 
-// 🛰 providers
-if (DEBUG) console.log("📡 Connecting to Mainnet Ethereum");
-// const mainnetProvider = getDefaultProvider("mainnet", { infura: INFURA_ID, etherscan: ETHERSCAN_KEY, quorum: 1 });
-// const mainnetProvider = new InfuraProvider("mainnet",INFURA_ID);
-//
-// attempt to connect to our own scaffold eth rpc and if that fails fall back to infura...
-// Using StaticJsonRpcProvider as the chainId won't change see https://github.com/ethers-io/ethers.js/issues/901
-const scaffoldEthProvider = navigator.onLine
-  ? new ethers.providers.StaticJsonRpcProvider("https://rpc.scaffoldeth.io:48544")
-  : null;
 const poktMainnetProvider = navigator.onLine
   ? new ethers.providers.StaticJsonRpcProvider(
      "https://eth-mainnet.gateway.pokt.network/v1/lb/611156b4a585a20035148406",
     )
   : null;
+
 const mainnetInfura = navigator.onLine
   ? new ethers.providers.StaticJsonRpcProvider("https://mainnet.infura.io/v3/" + INFURA_ID)
   : null;
@@ -229,12 +220,11 @@ const blockExplorer = targetNetwork.blockExplorer;
 // Portis ID: 6255fb2b-58c8-433b-a2c9-62098c05ddc9
 
 function App(props) {
-  const mainnetProvider =
-    poktMainnetProvider && poktMainnetProvider._isProvider
-      ? poktMainnetProvider
-      : scaffoldEthProvider && scaffoldEthProvider._network
-      ? scaffoldEthProvider
-      : mainnetInfura;
+  const mainnetProvider = mainnetInfura;
+  
+   // poktMainnetProvider && poktMainnetProvider._isProvider
+   //   ? poktMainnetProvider
+   //   : mainnetInfura;
 
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
@@ -673,6 +663,7 @@ function App(props) {
                       alert("Bundles submitted");
                     } catch (error) {
                       console.log(error);
+                      alert("Error submitting bundles. Check console for details.");
                     }
                   }}
                 >
