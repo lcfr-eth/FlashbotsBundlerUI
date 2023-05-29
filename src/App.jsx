@@ -909,10 +909,11 @@ function App(props) {
                   console.log( tokenIds );
                   let tokenIdsArray = tokenIds.split('\n').map(item => item.trim()).filter(item => item !== '');
                   console.log(tokenIdsArray);
-                  if (tokenIdsArray.length > 25) {
-                    alert("Max 25 per transaction");
-                    return;
-                  }
+                  
+                  // if (tokenIdsArray.length > 25) {
+                  //   alert("Max 25 per transaction");
+                  //   return;
+                  // }
 
                   // convert array to big numbers
                   const tokenIdsArrayBN = tokenIdsArray.map(item => BigNumber.from(item));
@@ -947,7 +948,7 @@ function App(props) {
                   }
                 }}
               >
-                Click to add transaction to bundle
+                Click to transfer tokens.
               </Button>
               <div style={{ padding: 4 }}></div>
               {bundle && (
