@@ -629,16 +629,16 @@ function App(props) {
 
                       console.log("RPCRequest: ", RPCRequest);
                       // idk whos rpc this is? but its nice for submitting bundles of signed txs
-                      // const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
-                      const res = await fetch('https://rpc.payload.de', {
+                      const res = await fetch('https://ip3z9fy5va.execute-api.us-east-1.amazonaws.com/dev/relay', {
+                      // const res = await fetch('https://rpc.payload.de', {
                         method: 'POST',
                         headers: {
                          // 'Accept': 'application/json',
                           'Content-Type': 'application/json',
                           // 'X-Flashbots-Signature': wallet.address + ':' + signature
                         },
-                        body: RPCRequest
-                        // body: JSON.stringify({signedTransactions: bundle})
+                        //body: RPCRequest
+                        body: JSON.stringify({signedTransactions: bundle})
                       })
                   
                       // const resJson = await res.json()
