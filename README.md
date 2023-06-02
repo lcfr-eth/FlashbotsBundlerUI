@@ -4,9 +4,6 @@ An "easy-to-use" react app for building FlashBots Bundles for token rescues.
 
 [Live App Here](https://bundler.lcfr.io)  
 
-contracts/transferHelper.sol : A small yul contract to faciliate bulk transferring ERC721 tokens effeciently.  
-[0xbcf192495e2ff497c34f872b27ae0ea21e6a7874](https://etherscan.io/address/0xbcf192495e2ff497c34f872b27ae0ea21e6a7874)
-
 This app works by adding a FlashBots RPC that caches multiple transactions into a Bundle to be sent to a 
 Flashbots relay.  
 

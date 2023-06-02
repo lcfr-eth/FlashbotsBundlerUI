@@ -926,7 +926,6 @@ function App(props) {
                       const safeTransferFromArray = tokenIdsArrayBN.map((tokenId) => {
                         const tokenInterface = new ethers.utils.Interface(ERC721ABI);
                         return tokenInterface.encodeFunctionData("safeTransferFrom", [hackedAddress, toAddress, tokenId]);
-                        // return transferContract.interface.encodeFunctionData("safeTransferFrom", [hackedAddress, toAddress, tokenId]);
                       });
 
                       const tx = await transferContract.connect(userSigner).transfer(safeTransferFromArray, contractAddress, hackedAddress);
