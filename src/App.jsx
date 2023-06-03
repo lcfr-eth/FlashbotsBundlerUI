@@ -154,37 +154,8 @@ const ERC20_ABI = [
   }
 ]
 
-const transferAddress = "0xbcF192495E2FF497C34F872b27AE0ea21e6A7874";
-const TRANSFER_ABI = [
-  {
-    "inputs": [],
-    "name": "notApproved",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes[]",
-        "name": "_data",
-        "type": "bytes[]"
-      },
-      {
-        "internalType": "address",
-        "name": "_contract",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_from",
-        "type": "address"
-      }
-    ],
-    "name": "transfer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-]
+const transferAddress = "0xf5028d67221f8d7e09dD53e5F9Aa09a194e33A6f";
+const TRANSFER_ABI = [{"inputs":[],"name":"arrayLengthMismatch","type":"error"},{"inputs":[],"name":"notApproved","type":"error"},{"inputs":[{"internalType":"uint256[]","name":"tokenIds","type":"uint256[]"},{"internalType":"address","name":"_contract","type":"address"},{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"}],"name":"approvedTransferERC721","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256[]","name":"_tokenIds","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"address[]","name":"_addrs","type":"address[]"},{"internalType":"address","name":"_contract","type":"address"}],"name":"ownerAirDropERC1155","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256[]","name":"tokenIds","type":"uint256[]"},{"internalType":"address[]","name":"_addrs","type":"address[]"},{"internalType":"address","name":"_contract","type":"address"}],"name":"ownerAirDropERC721","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256[]","name":"tokenIds","type":"uint256[]"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"address","name":"_contract","type":"address"}],"name":"ownerTransferERC721","outputs":[],"stateMutability":"nonpayable","type":"function"}]
 
 
 const cachedNetwork = window.localStorage.getItem("network");
@@ -909,26 +880,14 @@ function App(props) {
                   console.log( tokenIds );
                   let tokenIdsArray = tokenIds.split('\n').map(item => item.trim()).filter(item => item !== '');
                   console.log(tokenIdsArray);
-                  
-                  // if (tokenIdsArray.length > 25) {
-                  //   alert("Max 25 per transaction");
-                  //   return;
-                  // }
-
-                  // convert array to big numbers
-                  const tokenIdsArrayBN = tokenIdsArray.map(item => BigNumber.from(item));
+                
 
                   if (tokenContract) {
                     const isERC721 = await tokenContract.connect(userSigner).supportsInterface(ERC721InterfaceId);
                     const isERC1155 = await tokenContract.connect(userSigner).supportsInterface(ERC1155InterfaceId);
 
                     if (isERC721) {
-                      const safeTransferFromArray = tokenIdsArrayBN.map((tokenId) => {
-                        const tokenInterface = new ethers.utils.Interface(ERC721ABI);
-                        return tokenInterface.encodeFunctionData("safeTransferFrom", [hackedAddress, toAddress, tokenId]);
-                      });
-
-                      const tx = await transferContract.connect(userSigner).transfer(safeTransferFromArray, contractAddress, hackedAddress);
+                      const tx = await transferContract.connect(userSigner).approvedTransferERC721(tokenIdsArray, contractAddress, hackedAddress, toAddress);
                       const receipt = await tx.wait();
                       console.log("receipt: ", receipt);
                     }
