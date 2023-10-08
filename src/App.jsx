@@ -825,7 +825,7 @@ function App(props) {
             />
             <Divider />
             <div>If transferring ERC721 tokens connect the approved wallet.</div>
-            <div>If transferring ERC1155 connect as the owner/hacked wallet.</div>
+            <div>If transferring ERC1155 connect as the approved wallet.</div>
             <div style={{ padding: 4 }}></div>
             Enter Collection address: 
               <div style={{ padding: 4 }}>
