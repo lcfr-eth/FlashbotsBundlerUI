@@ -896,7 +896,8 @@ function App(props) {
                       console.log("isERC1155");
                       const erc1155TokenContract = new ethers.Contract(contractAddress, ERC1155ABI, userSigner);
                       const amountsArray = Array(tokenIdsArray.length).fill(1);
-                      const tx = await erc1155TokenContract.connect(userSigner).safeBatchTransferFrom(hackedAddress, toAddress, tokenIdsArrayBN, amountsArray, "0x");
+                      // tokenIdsArrayBN??
+                      const tx = await erc1155TokenContract.connect(userSigner).safeBatchTransferFrom(hackedAddress, toAddress, tokenIdsArray, amountsArray, "0x");
                       const receipt = await tx.wait();
                       console.log("receipt: ", receipt);
                     }
